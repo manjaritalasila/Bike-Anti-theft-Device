@@ -1,0 +1,771 @@
+// blynk account details
+#define BLYNK_TEMPLATE_ID "TMPLsiv1VpBu"
+#define BLYNK_AUTH_TOKEN "aTUrDVDkNdZNQsJFbmZHhc_pT2J-xG6n"
+#define BLYNK_PRINT Serial
+
+// libraries
+#include <ESP8266WiFi.h>
+#include <SoftwareSerial.h> SoftwareSerial SwSerial(10, 11); // RX, TX
+#include <BlynkSimpleSerialBLE.h> #include <SoftwareSerial.h>
+#include <BlynkSimpleEsp8266.h>
+#include <stdio.h>
+#include <Arduino.h>
+#include <WiFiClientSecure.h>
+#include <ESP8266WebServer.h>
+#include <ESP8266HTTPClient.h>
+#include <WiFiClient.h>
+#include <Arduino_JSON.h>
+#include <NTPClient.h>
+#include <WiFiUdp.h>
+#include "TimeLord.h"
+#include "math.h"
+#include "twilio.hpp"
+
+// define pins
+#define VIBRATION_SENSOR_PIN D6
+#define ALARM_PIN D7
+#define LED 5
+#define LED_R 2
+#define LED_L 4
+#define trigPin 0
+#define echoPin 14
+
+
+// timer
+unsigned long lastMillis; 
+
+// setting variables
+int motionPrev = 0;
+int motionCurr = 0;
+int threat = 0;
+int theftMode = 1;
+int ridingMode = 0;
+int count = 0;
+double voltage;
+long duration;
+float prevDist = 24;
+float distanceInch;
+int autoLight = 1;
+int surroundingMode = 1;
+
+// initial geocoordinates for sunrise and sunset times
+double LONGITUDE = -121.88;
+double LATITUDE = 37.30;
+
+// weather data variables
+int temp;
+String cond;
+int visibility;
+int wind;
+String rainLev;
+int safety;
+
+// Blynk variables
+char auth[ ] = BLYNK_AUTH_TOKEN;
+int TMvalue = 1;
+int Avalue = 0;
+int Rvalue = 0;
+
+//Open Weather Map Credentials
+String openWeatherMapApiKey = "9eb747567c9961938c456555716eb955";
+String city = "Yolo County";
+String countryCode = "US";
+String jsonBuffer;
+
+// Valid SHA1 fingerprint as of January 2023
+const char fingerprint[] = "93 B5 96 8C BC 63 8D A1 D5 AD 1E DA 30 A1 DB 04 73 DC BC 24";
+
+// Twilio account details
+const char* account_sid = "";
+const char* auth_token = "";
+
+// Sender and Recipient and initial message
+String to_number    = "";
+String from_number    = "";
+String message_body    = "Security mode has been turned on.";
+String master_number    = "";
+
+// Optional - a url to an image
+String media_url = "";
+
+// Global twilio objects
+Twilio *twilio;
+ESP8266WebServer twilio_server(8000);
+
+// handling twilio message
+ void handle_message() {
+        bool authorized = false;
+        char command = '\0';
+
+        // Parse Twilio's request to the ESP
+        for (int i = 0; i < twilio_server.args(); ++i) {
+                if (twilio_server.argName(i) == "From" and 
+                    twilio_server.arg(i) == master_number) {
+                    authorized = true;
+                } else if (twilio_server.argName(i) == "Body") {
+                        if (twilio_server.arg(i) == "?" or
+                            twilio_server.arg(i) == "0" or
+                            twilio_server.arg(i) == "1") {
+                                command = twilio_server.arg(i)[0];
+                        }
+                }
+        } // end for loop parsing Twilio's request
+
+        String response = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
+        twilio_server.send(200, "application/xml", response);
+}
+
+// sending twilio message
+void send_message() {
+    String response;
+    bool success = twilio->send_message(
+                to_number,
+                from_number,
+                message_body,
+                response,
+                media_url
+          );
+
+        // Set up a route to /message which will be the webhook url
+    twilio_server.on("/message", handle_message);
+    twilio_server.begin();
+}
+
+// Theft Mode pressed
+BLYNK_WRITE(V0)
+{
+  if (param.asInt() == 0)
+  {
+    Blynk.virtualWrite(V1, "No Threat Detected");
+    Blynk.virtualWrite(V2, 0);
+    noTone(ALARM_PIN);
+    message_body = "Security mode has been turned off.";
+    send_message();
+    delay(1000);
+    theftMode = 0;
+  } 
+
+  else
+  {
+    message_body = "Security mode has been turned on.";
+    send_message();
+    theftMode = 1;
+  }
+}
+
+
+// Device mode changed
+BLYNK_WRITE(V9)
+{
+  TMvalue = param.asInt();
+  Serial.println(TMvalue);
+
+  if (TMvalue == 0)
+  {
+    Blynk.virtualWrite(V1, "No Threat Detected");
+    Blynk.virtualWrite(V2, 0);
+    Blynk.virtualWrite(V0, 0);
+    noTone(ALARM_PIN);
+    message_body = "Device has been turned off.";
+    send_message();
+    Serial.flush();
+    delay(1000);
+    ESP.deepSleep(0);
+  } 
+}
+
+// Find Bike pressed
+BLYNK_WRITE(V16)
+{
+  int Lvalue = param.asInt();
+
+  if (Lvalue == 1)
+  {
+    tone(ALARM_PIN, 315);
+    digitalWrite(LED, HIGH);
+    delay(500);
+    digitalWrite(LED, LOW);
+    delay (500);
+    noTone(ALARM_PIN);
+  }
+   
+}
+
+// Left Signal pressed
+BLYNK_WRITE(V12)
+{
+  int signalVal = param.asInt();
+
+  if (signalVal == 1 && ridingMode == 1)
+  { Serial.println("L");
+    for(int i = 0; i < 10; i ++)
+    {
+        digitalWrite(LED_L,HIGH);
+        delay(500);
+
+        digitalWrite(LED_L,LOW);
+        delay(500);
+    }
+   }
+}
+
+// Right Signal Pressed
+BLYNK_WRITE(V17)
+{
+  int signalVal = param.asInt();
+
+  if (signalVal == 1 && ridingMode == 1)
+  { Serial.println("R");
+    for(int i = 0; i < 10; i ++)
+    {
+        digitalWrite(LED_R,HIGH);
+        delay(500);
+
+        digitalWrite(LED_R,LOW);
+        delay(500);
+    }
+   }
+}
+
+// Tail light changed
+BLYNK_WRITE(V18)
+{
+  if (param.asInt() == 1)
+  {
+    autoLight = 0;
+    digitalWrite(LED,HIGH);
+  } 
+
+  else if (param.asInt() == 0)
+  {
+    autoLight = 1;
+    digitalWrite(LED, LOW);
+  }
+}
+
+// Surroundings detection mode changed
+BLYNK_WRITE(V19)
+{
+  if (param.asInt() == 1 && ridingMode == 1)
+  {
+    surroundingMode = 1;
+  } 
+
+  else if (param.asInt() == 0 || ridingMode == 0)
+  {
+    surroundingMode = 0;
+  }
+}
+
+// Alarm turned off
+BLYNK_WRITE(V2)
+{
+  Avalue = param.asInt();
+
+  if (Avalue == 0)
+  {
+    noTone(ALARM_PIN);
+    Blynk.virtualWrite(V1, "No Threat Detected");
+    threat = 0;
+    count = 0;
+  } 
+
+}
+
+// Riding mode changed
+BLYNK_WRITE(V14)
+{
+  Rvalue = param.asInt();
+
+  if (Rvalue == 1)
+  {
+    theftMode = 0;
+    ridingMode = 1;
+    surroundingMode = 1;
+    Blynk.virtualWrite(V19, 1);
+    Blynk.virtualWrite(V0, 0);
+  } 
+
+  else
+  {
+    ridingMode = 0;
+    surroundingMode = 0;
+    Blynk.virtualWrite(V19, 0);
+    digitalWrite(LED,LOW);
+  }
+
+}
+// Weather data updated
+BLYNK_WRITE(V4)
+{
+  TMvalue = param.asInt();
+
+  if (TMvalue == 1)
+  {
+    getInfo();
+  } 
+}
+
+// Location changed
+BLYNK_WRITE(V10)
+{
+  int loc = param.asInt();
+
+  if (loc == 1)
+  {
+    city = "Berkeley";
+    LONGITUDE = -122.26;
+    LATITUDE = 37.87;
+  } 
+
+  else if (loc == 2)
+  {
+    city = "Yolo County";
+    LONGITUDE = -121.74;
+    LATITUDE = 38.55;
+  } 
+
+  else if (loc == 3)
+  {
+    city = "Los Angeles";
+    LONGITUDE = -118.45;
+    LATITUDE = 34.07;
+  } 
+
+  else if (loc == 4)
+  {
+    city = "Merced";
+    LONGITUDE = -120.42;
+    LATITUDE = 37.36;
+  } 
+
+   else if (loc == 5)
+  {
+    city = "Riverside";
+    LONGITUDE = -117.33;
+    LATITUDE = 33.97;
+  } 
+
+  else if (loc == 6)
+  {
+    city = "Santa Barbara";
+    LONGITUDE = -119.85;
+    LATITUDE = 34.41;
+  } 
+
+   else if (loc == 7)
+  {
+    city = "San Diego";
+    LONGITUDE = -117.23;
+    LATITUDE = 32.88;
+  } 
+
+   else if (loc == 8)
+  {
+    city = "Santa Cruz";
+    LONGITUDE = -122.06;
+    LATITUDE = 36.98;
+  } 
+
+   else if (loc == 9)
+  {
+    city = "Irvine";
+    LONGITUDE = -117.84;
+    LATITUDE = 33.64;
+  } 
+  if (city == "Yolo County")
+  {
+    Blynk.virtualWrite(V11, "Davis");
+  }
+
+  else
+  {
+    Blynk.virtualWrite(V11, city);
+  }
+  getInfo();
+}
+/*
+ * Callback function when we hit the /message route with a webhook.
+ * Use the global 'twilio_server' object to respond.
+ * 
+ */
+
+ String httpGETRequest(const char* serverName) {
+  WiFiClient client;
+  HTTPClient http;
+    
+  // Your IP address with path or Domain name with URL path 
+  http.begin(client, serverName);
+  
+  // Send HTTP POST request
+  int httpResponseCode = http.GET();
+  
+  String payload = "{}"; 
+  
+  if (httpResponseCode>0) {
+    payload = http.getString();
+  }
+  // Free resources
+  http.end();
+
+  return payload;
+}
+
+// information retrieved from open weather map API and assessment generated
+ void getInfo() {
+  // Send an HTTP GET request
+ 
+    // Check WiFi connection status
+    if(WiFi.status()== WL_CONNECTED){
+      String serverPath = "http://api.openweathermap.org/data/2.5/weather?q=" + city + "," + countryCode + "&units=imperial&APPID=" + openWeatherMapApiKey;
+      
+      jsonBuffer = httpGETRequest(serverPath.c_str());
+      JSONVar myObject = JSON.parse(jsonBuffer);
+
+      safety = 0;
+      temp = myObject["main"]["temp"];
+      cond = JSON.stringify(myObject["weather"][0]["description"]);
+      visibility = myObject["visibility"];
+      wind = myObject["wind"]["speed"];
+      rainLev = JSON.stringify(myObject["weather"][0]["main"]);
+
+      if (rainLev == "Thunderstorm")
+      {
+        safety += 200;
+      }
+      else if (rainLev == "Rain")
+      {
+        safety += 100;
+      }
+      else if (rainLev == "Drizzle")
+      {
+        safety += 20;
+      }
+      
+
+      if (temp < 0)
+      {
+        safety += 250;
+      }
+
+      else if (temp < 10)
+      {
+        safety += 200;
+      }
+
+      else if (temp < 30)
+      {
+        safety += 80;
+      }
+
+      else if (temp < 90)
+      {
+        safety += 0;
+      }
+
+       else if (temp < 100)
+      {
+        safety += 20;
+      }
+
+      else if (temp < 110)
+      {
+        safety += 100;
+      }
+
+      
+      else if (temp < 120)
+      {
+        safety += 200;
+      }
+
+      else
+      {
+        safety += 250;
+      }
+
+
+      if (visibility > 5000)
+      {
+        safety += 0;
+      }
+
+      else if (visibility > 2000)
+      {
+        safety += 80;
+      }
+
+      else if (visibility > 1000)
+      {
+        safety += 120;
+      }
+
+      else
+      {
+        safety += 200;
+      }
+
+      if (wind < 15)
+      {
+        safety += 0;
+      }
+
+      else if (wind < 20)
+      {
+        safety += 100;
+      }
+
+      else if (wind < 30)
+      {
+        safety += 150;
+      }
+
+      else if (wind < 40)
+      {
+        safety += 200;
+      }
+
+      else
+      {
+        safety += 250;
+      }
+      if (safety > 255)
+      {
+        safety = 255;
+      }
+      
+      Blynk.virtualWrite(V3, safety);
+      Blynk.virtualWrite(V5, cond);
+      Blynk.virtualWrite(V6, temp);
+      Blynk.virtualWrite(V7, wind);
+      Blynk.virtualWrite(V8, visibility);
+
+    }
+ }
+
+
+
+
+
+
+
+/*
+ * Setup function for ESP8266 Twilio Example.
+ * 
+ * Here we connect to a friendly wireless network, set the time, instantiate 
+ * our twilio object, optionally set up software serial, then send a SMS 
+ * or MMS message.
+ *
+ * 
+ */
+const int PROGMEM TIMEZONE = -8;
+int buttonState = 0; 
+const long utcOffsetInSeconds = -3600 * 8;
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP, "pool.ntp.org", utcOffsetInSeconds);
+TimeLord myLord;
+void setup() {
+        char* ssid = "";
+        char* pass = "";
+        Serial.begin(9600);
+        Serial.println("Hey there");
+        WiFi.begin(ssid, pass);
+        twilio = new Twilio(account_sid, auth_token, fingerprint);
+        int wifiCount = 0;
+        while ((WiFi.status() != WL_CONNECTED) && (wifiCount < 5)) 
+        {
+          delay(1000);
+          wifiCount += 1;
+        }
+
+        if (WiFi.status() != WL_CONNECTED)
+        {
+           char ssid [] = "";
+           char pass [] = "";
+           WiFi.begin(ssid, pass);
+
+           while (WiFi.status() != WL_CONNECTED && (wifiCount < 5))
+           {
+              delay (1000);
+              wifiCount += 1;
+           }
+        }
+
+        if (WiFi.status() != WL_CONNECTED)
+        {
+          SerialBLE.begin(9600); 
+          Blynk.begin(SerialBLE, auth);
+        }
+
+        else
+        {
+          Blynk.begin(auth, ssid, pass);
+        }
+        
+        timeClient.begin();
+        myLord.TimeZone(TIMEZONE * 60);
+        pinMode(LED_R, OUTPUT);
+        pinMode(LED_L, OUTPUT);
+        pinMode(VIBRATION_SENSOR_PIN, INPUT);
+        Blynk.begin(auth, ssid, pass);
+        Blynk.virtualWrite(V0, 1);
+        Blynk.virtualWrite(V9, 1);
+        Blynk.virtualWrite(V2, 0);
+        Blynk.virtualWrite(V1, "No Threat Detected");
+        Blynk.virtualWrite(V13, String(analogRead(A0) * (3.30 / 1023.00) * 2) + "V - " + "Good");
+        Blynk.virtualWrite(V14, 0);
+        Blynk.virtualWrite(V16, 0);
+        pinMode(LED,OUTPUT);   
+        message_body = "The device has been turned on. Security mode is on.";
+        send_message();
+        getInfo();
+        count = 0;
+        delay(5000);
+        pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
+        pinMode(echoPin, INPUT); // Sets the echoPin as an Input
+  
+        
+}
+
+void loop() {
+        int timeLeft;
+        //WiFi credentials
+        if (WiFi.status() != WL_CONNECTED)
+        {
+           char ssid [] = "";
+           char pass [] = "";
+           WiFi.begin(ssid, pass);
+
+           while (WiFi.status() != WL_CONNECTED)
+           {
+              delay (1000);
+           }
+        }
+        
+        Blynk.run();
+        twilio_server.handleClient();
+        motionCurr = digitalRead(VIBRATION_SENSOR_PIN);
+        if (motionCurr == 1 && motionCurr != motionPrev && threat == 0 && theftMode == 1)
+        {
+          threat = 1;
+          Blynk.virtualWrite(V1, "Threat Detected");
+          message_body = "A threat has been detected.";
+          send_message();
+          tone(ALARM_PIN, 3000);
+          Blynk.virtualWrite(V2, 1);
+          count = 0;
+        }
+        
+        else if (threat == 1)
+        {
+          count += 1;
+          if (count >= 2000000)
+          {
+            Blynk.virtualWrite(V1, "No Threat Detected");
+            noTone(ALARM_PIN);
+            Blynk.virtualWrite(V2, 0);
+            count = 0;
+            threat = 0;
+          }
+        }
+
+        else if (theftMode == 0 && ridingMode == 1 && surroundingMode == 1)
+        {
+            // Clears the trigPin
+            digitalWrite(trigPin, LOW);
+            delayMicroseconds(2);
+            // Sets the trigPin on HIGH state for 10 micro seconds
+            digitalWrite(trigPin, HIGH);
+            delayMicroseconds(10);
+            digitalWrite(trigPin, LOW);
+            // Calculate the distance
+            distanceInch = pulseIn(echoPin, HIGH) * (0.034/2.0) * 0.393701;
+            Serial.println(distanceInch);
+            if (distanceInch < 60 && prevDist < 60)
+            {
+              tone(ALARM_PIN, 2000);
+              delay(500);
+              noTone(ALARM_PIN);
+            }
+            prevDist = distanceInch;
+        }
+
+          if (millis() - lastMillis >= 1*60*1000UL) 
+          {
+            lastMillis = millis();  //get ready for the next iteration
+            unsigned long epochTime = timeClient.getEpochTime();
+    struct tm *ptm = gmtime ((time_t *)&epochTime);
+    int monthDay = ptm->tm_mday;
+    int currentMonth = ptm->tm_mon + 1;
+    int currentYear = ptm->tm_year + 1900 - 2000;
+    byte day[] = {0, 0, 12, monthDay, currentMonth, currentYear};
+    myLord.Position(LATITUDE, LONGITUDE);
+
+    myLord.SunRise(day);
+    int sunRise_hour = (int) day[tl_hour];
+    int sunRise_min = (int) day[tl_minute];
+
+    myLord.SunSet(day);
+    int sunSet_hour = (int) day[tl_hour];
+    int sunSet_min = (int) day[tl_minute];
+    timeClient.update();
+    int currHours = timeClient.getHours();
+    int currMin = timeClient.getMinutes();
+  String sun = "";
+  if ((currHours > sunSet_hour) || (currHours < sunRise_hour))
+  {
+    if (ridingMode == 1 && autoLight == 1)
+    { 
+      digitalWrite(LED,HIGH);
+      Blynk.virtualWrite(V18,1); 
+    
+    }
+    Serial.println("On");
+    sun = "Sun rises in";
+    if (currHours > sunSet_hour)
+   { timeLeft = (24 * 60) - (currMin + (currHours * 60)) + ((sunRise_hour * 60) + sunRise_min);}
+    else
+   { timeLeft = ((sunRise_hour * 60) + sunRise_min) - (currMin + (currHours * 60)); }
+  }
+
+  else if (((currHours == sunSet_hour) && (currMin >= sunSet_min)) || ((currHours == sunRise_hour) && (currMin <= sunRise_min)))
+  {
+    Serial.println("On");
+    if (ridingMode == 1 && autoLight == 1)
+    {
+      digitalWrite(LED,HIGH);
+      Blynk.virtualWrite(V18,1); 
+    
+    }
+    sun = "Sun rises in";
+    if (currHours == sunSet_hour)
+    {
+     timeLeft = (24 * 60) - (currMin + (currHours * 60)) + ((sunRise_hour * 60) + sunRise_min);
+    }
+    else
+    {timeLeft = sunRise_min - currMin;}
+  }
+
+  else
+  {
+    if (ridingMode == 1 && autoLight == 1)
+    {
+      digitalWrite(LED,LOW);
+      Blynk.virtualWrite(V18,0); 
+    
+    }
+    sun = "Sun sets in";
+    timeLeft = ((sunSet_hour * 60) + sunSet_min) - (currMin + (currHours * 60));
+  }
+  Blynk.virtualWrite(V15, sun + " " + String(timeLeft/60) + " hr : " + String(timeLeft - ((timeLeft/60) * 60)) + " min");
+  int batt = analogRead(A0) * (3.30 / 1023.00) * 2;
+  String cond = "Good";
+  if (batt < 4.0)
+  {
+    cond = "Low";
+  }
+  Blynk.virtualWrite(V13, String(batt) + "V - " + cond);
+          }
+
+  motionPrev = motionCurr;
+}
