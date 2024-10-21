@@ -1,12 +1,10 @@
 // blynk account details
-#define BLYNK_TEMPLATE_ID "TMPLsiv1VpBu"
-#define BLYNK_AUTH_TOKEN "aTUrDVDkNdZNQsJFbmZHhc_pT2J-xG6n"
+#define BLYNK_TEMPLATE_ID ""
+#define BLYNK_AUTH_TOKEN ""
 #define BLYNK_PRINT Serial
 
 // libraries
 #include <ESP8266WiFi.h>
-#include <SoftwareSerial.h> SoftwareSerial SwSerial(10, 11); // RX, TX
-#include <BlynkSimpleSerialBLE.h> #include <SoftwareSerial.h>
 #include <BlynkSimpleEsp8266.h>
 #include <stdio.h>
 #include <Arduino.h>
@@ -24,11 +22,12 @@
 // define pins
 #define VIBRATION_SENSOR_PIN D6
 #define ALARM_PIN D7
-#define LED 5
-#define LED_R 2
-#define LED_L 4
-#define trigPin 0
-#define echoPin 14
+#define LED D1
+#define trigPin D3
+#define echoPin D5
+#define buttonPin D8
+#define yellow D2
+#define red 16 D4
 
 
 // timer
@@ -45,6 +44,7 @@ double voltage;
 long duration;
 float prevDist = 24;
 float distanceInch;
+bool LED_state = false;
 int autoLight = 1;
 int surroundingMode = 1;
 
@@ -191,41 +191,6 @@ BLYNK_WRITE(V16)
    
 }
 
-// Left Signal pressed
-BLYNK_WRITE(V12)
-{
-  int signalVal = param.asInt();
-
-  if (signalVal == 1 && ridingMode == 1)
-  { Serial.println("L");
-    for(int i = 0; i < 10; i ++)
-    {
-        digitalWrite(LED_L,HIGH);
-        delay(500);
-
-        digitalWrite(LED_L,LOW);
-        delay(500);
-    }
-   }
-}
-
-// Right Signal Pressed
-BLYNK_WRITE(V17)
-{
-  int signalVal = param.asInt();
-
-  if (signalVal == 1 && ridingMode == 1)
-  { Serial.println("R");
-    for(int i = 0; i < 10; i ++)
-    {
-        digitalWrite(LED_R,HIGH);
-        delay(500);
-
-        digitalWrite(LED_R,LOW);
-        delay(500);
-    }
-   }
-}
 
 // Tail light changed
 BLYNK_WRITE(V18)
@@ -567,8 +532,7 @@ TimeLord myLord;
 void setup() {
         char* ssid = "";
         char* pass = "";
-        Serial.begin(9600);
-        Serial.println("Hey there");
+        Serial.begin(115200);
         WiFi.begin(ssid, pass);
         twilio = new Twilio(account_sid, auth_token, fingerprint);
         int wifiCount = 0;
@@ -576,60 +540,9 @@ void setup() {
         {
           delay(1000);
           wifiCount += 1;
+          Serial.println("connecting");
         }
 
-        if (WiFi.status() != WL_CONNECTED)
-        {
-           char ssid [] = "";
-           char pass [] = "";
-           WiFi.begin(ssid, pass);
-
-           while (WiFi.status() != WL_CONNECTED && (wifiCount < 5))
-           {
-              delay (1000);
-              wifiCount += 1;
-           }
-        }
-
-        if (WiFi.status() != WL_CONNECTED)
-        {
-          SerialBLE.begin(9600); 
-          Blynk.begin(SerialBLE, auth);
-        }
-
-        else
-        {
-          Blynk.begin(auth, ssid, pass);
-        }
-        
-        timeClient.begin();
-        myLord.TimeZone(TIMEZONE * 60);
-        pinMode(LED_R, OUTPUT);
-        pinMode(LED_L, OUTPUT);
-        pinMode(VIBRATION_SENSOR_PIN, INPUT);
-        Blynk.begin(auth, ssid, pass);
-        Blynk.virtualWrite(V0, 1);
-        Blynk.virtualWrite(V9, 1);
-        Blynk.virtualWrite(V2, 0);
-        Blynk.virtualWrite(V1, "No Threat Detected");
-        Blynk.virtualWrite(V13, String(analogRead(A0) * (3.30 / 1023.00) * 2) + "V - " + "Good");
-        Blynk.virtualWrite(V14, 0);
-        Blynk.virtualWrite(V16, 0);
-        pinMode(LED,OUTPUT);   
-        message_body = "The device has been turned on. Security mode is on.";
-        send_message();
-        getInfo();
-        count = 0;
-        delay(5000);
-        pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
-        pinMode(echoPin, INPUT); // Sets the echoPin as an Input
-  
-        
-}
-
-void loop() {
-        int timeLeft;
-        //WiFi credentials
         if (WiFi.status() != WL_CONNECTED)
         {
            char ssid [] = "";
@@ -642,8 +555,50 @@ void loop() {
            }
         }
         
-        Blynk.run();
-        twilio_server.handleClient();
+        
+        
+        timeClient.begin();
+        myLord.TimeZone(TIMEZONE * 60);
+      
+        pinMode(VIBRATION_SENSOR_PIN, INPUT);
+        Blynk.begin(auth, ssid, pass);
+        Blynk.virtualWrite(V0, 1);
+        Blynk.virtualWrite(V9, 1);
+        Blynk.virtualWrite(V2, 0);
+        Blynk.virtualWrite(V1, "No Threat Detected");
+        Blynk.virtualWrite(V13, String(analogRead(A0) * (3.30 / 1023.00) * 2) + "V - " + "Good");
+        Blynk.virtualWrite(V14, 0);
+        Blynk.virtualWrite(V16, 0);
+        pinMode(LED, OUTPUT);   
+        pinMode(buttonPin, INPUT);
+        pinMode(red, OUTPUT);
+        pinMode(yellow, OUTPUT);
+        message_body = "The device has been turned on. Security mode is on.";
+        send_message();
+        getInfo();
+        count = 0;
+        delay(5000);
+        pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
+        pinMode(echoPin, INPUT); // Sets the echoPin as an Input
+        Serial.begin(115200);
+        
+}
+
+void loop() {
+        int timeLeft;
+        //WiFi credentials
+        if (WiFi.status() != WL_CONNECTED)
+        {
+           char ssid [] = "";
+           char pass [] = "";
+           WiFi.begin(ssid, pass);
+        }
+        Serial.println(ridingMode);
+        if (WiFi.status() == WL_CONNECTED)
+        {
+          Blynk.run();
+          twilio_server.handleClient();
+        }
         motionCurr = digitalRead(VIBRATION_SENSOR_PIN);
         if (motionCurr == 1 && motionCurr != motionPrev && threat == 0 && theftMode == 1)
         {
@@ -680,12 +635,25 @@ void loop() {
             digitalWrite(trigPin, LOW);
             // Calculate the distance
             distanceInch = pulseIn(echoPin, HIGH) * (0.034/2.0) * 0.393701;
-            Serial.println(distanceInch);
-            if (distanceInch < 60 && prevDist < 60)
+            if (distanceInch !=0)
+           { Serial.println(distanceInch);}
+            if (distanceInch < 5 && distanceInch != 0 )
             {
-              tone(ALARM_PIN, 2000);
-              delay(500);
-              noTone(ALARM_PIN);
+                digitalWrite(red, HIGH);
+                digitalWrite(yellow, LOW);
+ 
+            }
+
+            else if (distanceInch < 10 && distanceInch != 0)
+            {
+                digitalWrite(red, LOW);
+                digitalWrite(yellow, HIGH);
+            }
+
+            else if (distanceInch != 0)
+            {
+                digitalWrite(red, LOW);
+                digitalWrite(yellow, LOW);
             }
             prevDist = distanceInch;
         }
@@ -768,4 +736,13 @@ void loop() {
           }
 
   motionPrev = motionCurr;
+    // read the state of the pushbutton value:
+  buttonState = digitalRead(buttonPin);
+
+  // check if the pushbutton is pressed. If it is, the buttonState is HIGH:
+  if (buttonState == HIGH) {
+    // toggle LED:
+    LED_state = !LED_state;
+    digitalWrite(LED, LED_state);
+  } 
 }
