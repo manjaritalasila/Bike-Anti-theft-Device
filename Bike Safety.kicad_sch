@@ -505,6 +505,60 @@
         )
       )
     )
+    (symbol "Switch:SW_Push" (pin_numbers hide) (pin_names (offset 1.016) hide) (in_bom yes) (on_board yes)
+      (property "Reference" "SW" (at 1.27 2.54 0)
+        (effects (font (size 1.27 1.27)) (justify left))
+      )
+      (property "Value" "SW_Push" (at 0 -1.524 0)
+        (effects (font (size 1.27 1.27)))
+      )
+      (property "Footprint" "" (at 0 5.08 0)
+        (effects (font (size 1.27 1.27)) hide)
+      )
+      (property "Datasheet" "~" (at 0 5.08 0)
+        (effects (font (size 1.27 1.27)) hide)
+      )
+      (property "ki_keywords" "switch normally-open pushbutton push-button" (at 0 0 0)
+        (effects (font (size 1.27 1.27)) hide)
+      )
+      (property "ki_description" "Push button switch, generic, two pins" (at 0 0 0)
+        (effects (font (size 1.27 1.27)) hide)
+      )
+      (symbol "SW_Push_0_1"
+        (circle (center -2.032 0) (radius 0.508)
+          (stroke (width 0) (type default))
+          (fill (type none))
+        )
+        (polyline
+          (pts
+            (xy 0 1.27)
+            (xy 0 3.048)
+          )
+          (stroke (width 0) (type default))
+          (fill (type none))
+        )
+        (polyline
+          (pts
+            (xy 2.54 1.27)
+            (xy -2.54 1.27)
+          )
+          (stroke (width 0) (type default))
+          (fill (type none))
+        )
+        (circle (center 2.032 0) (radius 0.508)
+          (stroke (width 0) (type default))
+          (fill (type none))
+        )
+        (pin passive line (at -5.08 0 0) (length 2.54)
+          (name "1" (effects (font (size 1.27 1.27))))
+          (number "1" (effects (font (size 1.27 1.27))))
+        )
+        (pin passive line (at 5.08 0 180) (length 2.54)
+          (name "2" (effects (font (size 1.27 1.27))))
+          (number "2" (effects (font (size 1.27 1.27))))
+        )
+      )
+    )
     (symbol "power:+3V3" (power) (pin_names (offset 0)) (in_bom yes) (on_board yes)
       (property "Reference" "#PWR" (at 0 -3.81 0)
         (effects (font (size 1.27 1.27)) hide)
@@ -651,6 +705,9 @@
     )
   )
 
+  (junction (at 160.02 133.35) (diameter 0) (color 0 0 0 0)
+    (uuid 3ac0d90c-6f40-47e1-ac25-a4e7452ae931)
+  )
   (junction (at 176.53 77.47) (diameter 0) (color 0 0 0 0)
     (uuid a4fc289d-966d-4530-9047-eca4dc5d8f70)
   )
@@ -676,6 +733,10 @@
   (wire (pts (xy 168.91 77.47) (xy 168.91 64.77))
     (stroke (width 0) (type default))
     (uuid 19f3ee08-7f47-448d-a60a-dbe5bd0c5830)
+  )
+  (wire (pts (xy 160.02 134.62) (xy 160.02 133.35))
+    (stroke (width 0) (type default))
+    (uuid 1ee42761-1796-44e0-bcb1-4f6b3a76ee62)
   )
   (wire (pts (xy 90.17 64.77) (xy 93.98 64.77))
     (stroke (width 0) (type default))
@@ -705,9 +766,17 @@
     (stroke (width 0) (type default))
     (uuid 4addf109-0e2b-43d6-beb2-5019e6d694ce)
   )
+  (wire (pts (xy 149.86 133.35) (xy 160.02 133.35))
+    (stroke (width 0) (type default))
+    (uuid 524ade38-4b19-4e89-96d3-b242ac49ba35)
+  )
   (wire (pts (xy 149.86 95.25) (xy 190.5 95.25))
     (stroke (width 0) (type default))
     (uuid 57f26b48-b606-44cf-a8c3-bf8cd356166b)
+  )
+  (wire (pts (xy 149.86 102.87) (xy 149.86 133.35))
+    (stroke (width 0) (type default))
+    (uuid 6302abec-a927-4a3b-9ecc-0c43d3e2c0a2)
   )
   (wire (pts (xy 130.81 68.58) (xy 133.35 68.58))
     (stroke (width 0) (type default))
@@ -836,7 +905,7 @@
     )
     (pin "1" (uuid 5b2a7479-8a78-45dd-ad75-1152d420b800))
     (instances
-      (project "Bike Safety"
+      (project "Bike Safety-2"
         (path "/1925ab50-b129-485f-aa70-9d722d7d68aa"
           (reference "#PWR05") (unit 1)
         )
@@ -861,7 +930,7 @@
     )
     (pin "1" (uuid 9b8f2bec-5cad-4c36-9fc6-97f38ba02ad6))
     (instances
-      (project "Bike Safety"
+      (project "Bike Safety-2"
         (path "/1925ab50-b129-485f-aa70-9d722d7d68aa"
           (reference "#PWR01") (unit 1)
         )
@@ -887,9 +956,34 @@
     (pin "1" (uuid 73055a19-6068-483c-b8f6-904915a9718a))
     (pin "2" (uuid 9f3add0e-db07-4a0b-bc79-86b14a8ec6bc))
     (instances
-      (project "Bike Safety"
+      (project "Bike Safety-2"
         (path "/1925ab50-b129-485f-aa70-9d722d7d68aa"
           (reference "D3") (unit 1)
+        )
+      )
+    )
+  )
+
+  (symbol (lib_id "power:GND") (at 160.02 142.24 0) (unit 1)
+    (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
+    (uuid 108502c7-6020-41a5-9dc5-42e18127385d)
+    (property "Reference" "#PWR014" (at 160.02 148.59 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Value" "GND" (at 160.02 147.32 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (property "Footprint" "" (at 160.02 142.24 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Datasheet" "" (at 160.02 142.24 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (pin "1" (uuid 354cc5f8-e7e5-4c39-af90-a55c28007ba9))
+    (instances
+      (project "Bike Safety-2"
+        (path "/1925ab50-b129-485f-aa70-9d722d7d68aa"
+          (reference "#PWR014") (unit 1)
         )
       )
     )
@@ -913,7 +1007,7 @@
     (pin "1" (uuid 81f7bf42-a9fa-4a9e-8091-c8fc0f5c5488))
     (pin "2" (uuid af0cb139-66fa-445c-b721-f06a7503cba8))
     (instances
-      (project "Bike Safety"
+      (project "Bike Safety-2"
         (path "/1925ab50-b129-485f-aa70-9d722d7d68aa"
           (reference "R1") (unit 1)
         )
@@ -939,7 +1033,7 @@
     (pin "1" (uuid d0e4eca0-ee5a-4537-a3b6-a2fba267df10))
     (pin "2" (uuid bdc03d01-d3e5-4084-aa47-4ca6c035794e))
     (instances
-      (project "Bike Safety"
+      (project "Bike Safety-2"
         (path "/1925ab50-b129-485f-aa70-9d722d7d68aa"
           (reference "R4") (unit 1)
         )
@@ -965,7 +1059,7 @@
     (pin "1" (uuid 914645d8-554f-4911-acb7-9124e3c708f6))
     (pin "2" (uuid fe3a6387-0bc6-4882-91ca-e3c64373b5e4))
     (instances
-      (project "Bike Safety"
+      (project "Bike Safety-2"
         (path "/1925ab50-b129-485f-aa70-9d722d7d68aa"
           (reference "R6") (unit 1)
         )
@@ -991,7 +1085,7 @@
     (pin "1" (uuid 8a08d392-82ce-42ba-90b9-cde7400946d1))
     (pin "2" (uuid 7cca594a-aa7c-4ba9-9c3a-35e95a26ab27))
     (instances
-      (project "Bike Safety"
+      (project "Bike Safety-2"
         (path "/1925ab50-b129-485f-aa70-9d722d7d68aa"
           (reference "R3") (unit 1)
         )
@@ -1016,7 +1110,7 @@
     )
     (pin "1" (uuid 9af82349-6df2-4cf9-b002-b36a8e3487da))
     (instances
-      (project "Bike Safety"
+      (project "Bike Safety-2"
         (path "/1925ab50-b129-485f-aa70-9d722d7d68aa"
           (reference "#PWR08") (unit 1)
         )
@@ -1041,7 +1135,7 @@
     )
     (pin "1" (uuid b47b3b2f-6396-42ed-a189-e74154cc3cda))
     (instances
-      (project "Bike Safety"
+      (project "Bike Safety-2"
         (path "/1925ab50-b129-485f-aa70-9d722d7d68aa"
           (reference "#PWR02") (unit 1)
         )
@@ -1066,7 +1160,7 @@
     )
     (pin "1" (uuid 26d9f129-08fb-4643-a164-1ca980322479))
     (instances
-      (project "Bike Safety"
+      (project "Bike Safety-2"
         (path "/1925ab50-b129-485f-aa70-9d722d7d68aa"
           (reference "#PWR013") (unit 1)
         )
@@ -1091,7 +1185,7 @@
     )
     (pin "1" (uuid ee214800-a218-4e7b-bb1f-990c00d0aa8a))
     (instances
-      (project "Bike Safety"
+      (project "Bike Safety-2"
         (path "/1925ab50-b129-485f-aa70-9d722d7d68aa"
           (reference "#PWR07") (unit 1)
         )
@@ -1117,7 +1211,7 @@
     (pin "1" (uuid 29be658e-d983-4b5a-b700-753da6c7d9a9))
     (pin "2" (uuid 68723c91-1390-4b06-8d47-0c700d39126c))
     (instances
-      (project "Bike Safety"
+      (project "Bike Safety-2"
         (path "/1925ab50-b129-485f-aa70-9d722d7d68aa"
           (reference "R5") (unit 1)
         )
@@ -1143,7 +1237,7 @@
     (pin "1" (uuid eecbca79-ac85-4e34-bd1f-aad0494413fd))
     (pin "2" (uuid 03f2b436-466d-42e2-84f0-d9437222b3e0))
     (instances
-      (project "Bike Safety"
+      (project "Bike Safety-2"
         (path "/1925ab50-b129-485f-aa70-9d722d7d68aa"
           (reference "D2") (unit 1)
         )
@@ -1166,7 +1260,8 @@
     (property "Datasheet" "https://wiki.wemos.cc/products:d1:d1_mini#documentation" (at 92.71 121.92 0)
       (effects (font (size 1.27 1.27)) hide)
     )
-    (pin "1" (uuid 65145333-89be-4b04-8cb2-4f49e846dc5c))
+    (pin "1" (uuid 65145333-89be-4b04-8cb2-4f49e846dc5d))
+    (pin "1" (uuid 65145333-89be-4b04-8cb2-4f49e846dc5d))
     (pin "10" (uuid d75ecfc9-e2f9-454d-994d-4032ac9ddf26))
     (pin "11" (uuid 18fc7b17-2541-428e-9256-3aff1700ae34))
     (pin "12" (uuid ca251012-c00d-41c6-b956-93f46af1dc73))
@@ -1182,9 +1277,8 @@
     (pin "7" (uuid d011b731-9dc6-45c9-9d92-a8645664f5b1))
     (pin "8" (uuid a30f5ae3-c778-41a6-af5f-fee9255dfa89))
     (pin "9" (uuid 25915822-f585-41d7-ab31-30a6f7e542e2))
-    (pin "1" (uuid 65145333-89be-4b04-8cb2-4f49e846dc5c))
     (instances
-      (project "Bike Safety"
+      (project "Bike Safety-2"
         (path "/1925ab50-b129-485f-aa70-9d722d7d68aa"
           (reference "U1") (unit 1)
         )
@@ -1210,7 +1304,7 @@
     (pin "1" (uuid 69764d81-ac16-443c-aa37-a012cabcc45b))
     (pin "2" (uuid a2173132-a554-4279-8843-217ea54be19b))
     (instances
-      (project "Bike Safety"
+      (project "Bike Safety-2"
         (path "/1925ab50-b129-485f-aa70-9d722d7d68aa"
           (reference "D1") (unit 1)
         )
@@ -1235,7 +1329,7 @@
     )
     (pin "1" (uuid 71e8da86-af1a-4abe-a46c-489c2f2097e6))
     (instances
-      (project "Bike Safety"
+      (project "Bike Safety-2"
         (path "/1925ab50-b129-485f-aa70-9d722d7d68aa"
           (reference "#PWR010") (unit 1)
         )
@@ -1261,9 +1355,34 @@
     (pin "1" (uuid 1b575ca5-d9d4-4807-88d2-1fe3effcf65b))
     (pin "2" (uuid f330f1b3-99e4-44c7-bc50-fc1640df02b0))
     (instances
-      (project "Bike Safety"
+      (project "Bike Safety-2"
         (path "/1925ab50-b129-485f-aa70-9d722d7d68aa"
           (reference "BT1") (unit 1)
+        )
+      )
+    )
+  )
+
+  (symbol (lib_id "power:+5V") (at 160.02 123.19 0) (unit 1)
+    (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
+    (uuid 82360988-5297-4866-b482-74d942191a25)
+    (property "Reference" "#PWR015" (at 160.02 127 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Value" "+5V" (at 160.02 118.11 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (property "Footprint" "" (at 160.02 123.19 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Datasheet" "" (at 160.02 123.19 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (pin "1" (uuid f587cad9-d446-445a-9748-80e4e511ce83))
+    (instances
+      (project "Bike Safety-2"
+        (path "/1925ab50-b129-485f-aa70-9d722d7d68aa"
+          (reference "#PWR015") (unit 1)
         )
       )
     )
@@ -1286,7 +1405,7 @@
     )
     (pin "1" (uuid 69158752-5f47-4b4a-9141-dd1d71708d7f))
     (instances
-      (project "Bike Safety"
+      (project "Bike Safety-2"
         (path "/1925ab50-b129-485f-aa70-9d722d7d68aa"
           (reference "#PWR03") (unit 1)
         )
@@ -1311,7 +1430,7 @@
     )
     (pin "1" (uuid 49ea57c3-6f01-4bb6-9ed4-a7265558761a))
     (instances
-      (project "Bike Safety"
+      (project "Bike Safety-2"
         (path "/1925ab50-b129-485f-aa70-9d722d7d68aa"
           (reference "#PWR04") (unit 1)
         )
@@ -1336,7 +1455,7 @@
     )
     (pin "1" (uuid 1f44c765-d36a-4b2c-bdad-047ba6386882))
     (instances
-      (project "Bike Safety"
+      (project "Bike Safety-2"
         (path "/1925ab50-b129-485f-aa70-9d722d7d68aa"
           (reference "#PWR012") (unit 1)
         )
@@ -1390,7 +1509,7 @@
     (pin "2" (uuid 8d5e274c-e4d3-4103-a375-3c751cff446b))
     (pin "3" (uuid 217c8b00-f24a-4971-b9e6-3b50184ff04d))
     (instances
-      (project "Bike Safety"
+      (project "Bike Safety-2"
         (path "/1925ab50-b129-485f-aa70-9d722d7d68aa"
           (reference "U3") (unit 1)
         )
@@ -1445,9 +1564,35 @@
     (pin "3" (uuid 9b6e641c-258e-41e5-b349-b06180170531))
     (pin "4" (uuid cbd3bb82-278a-4877-96f1-8a6547fa77fb))
     (instances
-      (project "Bike Safety"
+      (project "Bike Safety-2"
         (path "/1925ab50-b129-485f-aa70-9d722d7d68aa"
           (reference "U2") (unit 1)
+        )
+      )
+    )
+  )
+
+  (symbol (lib_id "Device:R") (at 160.02 138.43 0) (unit 1)
+    (in_bom yes) (on_board yes) (dnp no)
+    (uuid a89d703f-dfc3-4fed-81a7-86e723af1bc9)
+    (property "Reference" "R7" (at 154.94 138.43 90)
+      (effects (font (size 1.27 1.27)))
+    )
+    (property "Value" "10k" (at 157.48 138.43 90)
+      (effects (font (size 1.27 1.27)))
+    )
+    (property "Footprint" "" (at 158.242 138.43 90)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Datasheet" "~" (at 160.02 138.43 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (pin "1" (uuid 0e3df403-2855-40cc-8f1c-02b8bacda170))
+    (pin "2" (uuid 2585c080-b649-4434-b4f4-0387877dd31e))
+    (instances
+      (project "Bike Safety-2"
+        (path "/1925ab50-b129-485f-aa70-9d722d7d68aa"
+          (reference "R7") (unit 1)
         )
       )
     )
@@ -1471,7 +1616,7 @@
     (pin "1" (uuid 6e3ae17e-545d-4354-b14e-4cf282389860))
     (pin "2" (uuid 7291891f-c696-4fb7-a7e2-9d85cf788aad))
     (instances
-      (project "Bike Safety"
+      (project "Bike Safety-2"
         (path "/1925ab50-b129-485f-aa70-9d722d7d68aa"
           (reference "BZ1") (unit 1)
         )
@@ -1496,7 +1641,7 @@
     )
     (pin "1" (uuid 03a4b7be-0334-47d4-be1b-89dfde42003f))
     (instances
-      (project "Bike Safety"
+      (project "Bike Safety-2"
         (path "/1925ab50-b129-485f-aa70-9d722d7d68aa"
           (reference "#PWR011") (unit 1)
         )
@@ -1521,7 +1666,7 @@
     )
     (pin "1" (uuid 9c6adb5f-2cd7-4dc7-b5c8-c3753c24281a))
     (instances
-      (project "Bike Safety"
+      (project "Bike Safety-2"
         (path "/1925ab50-b129-485f-aa70-9d722d7d68aa"
           (reference "#PWR06") (unit 1)
         )
@@ -1546,7 +1691,7 @@
     )
     (pin "1" (uuid c53d318e-cc3d-4db9-ba4c-e8528147167a))
     (instances
-      (project "Bike Safety"
+      (project "Bike Safety-2"
         (path "/1925ab50-b129-485f-aa70-9d722d7d68aa"
           (reference "#PWR09") (unit 1)
         )
@@ -1572,7 +1717,7 @@
     (pin "1" (uuid 14264fae-2089-4464-9826-9e12c0bce07d))
     (pin "2" (uuid 732fc515-b170-4f3a-bda1-b06d0e8955f1))
     (instances
-      (project "Bike Safety"
+      (project "Bike Safety-2"
         (path "/1925ab50-b129-485f-aa70-9d722d7d68aa"
           (reference "R2") (unit 1)
         )
@@ -1598,9 +1743,35 @@
     (pin "1" (uuid 51a2dda0-17f6-495d-aad4-c84ab93e3214))
     (pin "2" (uuid 047990fc-ad56-429a-b6c5-920ea72a842e))
     (instances
-      (project "Bike Safety"
+      (project "Bike Safety-2"
         (path "/1925ab50-b129-485f-aa70-9d722d7d68aa"
           (reference "D4") (unit 1)
+        )
+      )
+    )
+  )
+
+  (symbol (lib_id "Switch:SW_Push") (at 160.02 128.27 90) (unit 1)
+    (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
+    (uuid d2635165-2c44-4fd9-a3dd-37c637779b5f)
+    (property "Reference" "SW1" (at 161.29 127 90)
+      (effects (font (size 1.27 1.27)) (justify right))
+    )
+    (property "Value" "SW_Push" (at 161.29 129.54 90)
+      (effects (font (size 1.27 1.27)) (justify right))
+    )
+    (property "Footprint" "" (at 154.94 128.27 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Datasheet" "~" (at 154.94 128.27 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (pin "1" (uuid a394d12b-2468-4788-b40a-7c22f7cc75bb))
+    (pin "2" (uuid c460a480-46e1-40ce-aa8d-74d034abe6e0))
+    (instances
+      (project "Bike Safety-2"
+        (path "/1925ab50-b129-485f-aa70-9d722d7d68aa"
+          (reference "SW1") (unit 1)
         )
       )
     )
