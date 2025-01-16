@@ -27,8 +27,7 @@
 #define echoPin D5
 #define buttonPin D8
 #define yellow D2
-#define red 16 D4
-
+#define red D4
 
 // timer
 unsigned long lastMillis; 
@@ -41,9 +40,6 @@ int theftMode = 1;
 int ridingMode = 0;
 int count = 0;
 double voltage;
-long duration;
-float prevDist = 24;
-float distanceInch;
 bool LED_state = false;
 int autoLight = 1;
 int surroundingMode = 1;
@@ -59,6 +55,10 @@ int visibility;
 int wind;
 String rainLev;
 int safety;
+
+// EMA variables 
+float emaDistance = 0;  // Initial EMA value 
+float alpha = 0.5;  // Smoothing factor 
 
 // Blynk variables
 char auth[ ] = BLYNK_AUTH_TOKEN;
@@ -85,7 +85,7 @@ String from_number    = "";
 String message_body    = "Security mode has been turned on.";
 String master_number    = "";
 
-// Optional - a url to an image
+// A url to an image
 String media_url = "";
 
 // Global twilio objects
@@ -375,6 +375,16 @@ BLYNK_WRITE(V10)
 
   return payload;
 }
+ float getUltrasonicDistance() { 
+  digitalWrite(trigPin, LOW); 
+  delayMicroseconds(2); 
+  digitalWrite(trigPin, HIGH); 
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW); 
+  long duration = pulseIn(echoPin, HIGH); 
+  float distance = duration * 0.034 / 2 * 0.393701; 
+  return distance; 
+}
 
 // information retrieved from open weather map API and assessment generated
  void getInfo() {
@@ -508,27 +518,13 @@ BLYNK_WRITE(V10)
     }
  }
 
-
-
-
-
-
-
-/*
- * Setup function for ESP8266 Twilio Example.
- * 
- * Here we connect to a friendly wireless network, set the time, instantiate 
- * our twilio object, optionally set up software serial, then send a SMS 
- * or MMS message.
- *
- * 
- */
 const int PROGMEM TIMEZONE = -8;
 int buttonState = 0; 
 const long utcOffsetInSeconds = -3600 * 8;
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org", utcOffsetInSeconds);
 TimeLord myLord;
+
 void setup() {
         char* ssid = "";
         char* pass = "";
@@ -554,8 +550,6 @@ void setup() {
               delay (1000);
            }
         }
-        
-        
         
         timeClient.begin();
         myLord.TimeZone(TIMEZONE * 60);
@@ -626,36 +620,28 @@ void loop() {
 
         else if (theftMode == 0 && ridingMode == 1 && surroundingMode == 1)
         {
-            // Clears the trigPin
-            digitalWrite(trigPin, LOW);
-            delayMicroseconds(2);
-            // Sets the trigPin on HIGH state for 10 micro seconds
-            digitalWrite(trigPin, HIGH);
-            delayMicroseconds(10);
-            digitalWrite(trigPin, LOW);
-            // Calculate the distance
-            distanceInch = pulseIn(echoPin, HIGH) * (0.034/2.0) * 0.393701;
-            if (distanceInch !=0)
-           { Serial.println(distanceInch);}
-            if (distanceInch < 5 && distanceInch != 0 )
+            currentDistance = getUltrasonicDistance();
+            emaDistance = alpha * currentDistance + (1 - alpha) * emaDistance;
+            
+            if (emaDistance !=0)
+           { Serial.println(emaDistance);}
+            if (emaDistance < 5 && emaDistance != 0 )
             {
                 digitalWrite(red, HIGH);
                 digitalWrite(yellow, LOW);
- 
             }
 
-            else if (distanceInch < 10 && distanceInch != 0)
+            else if (emaDistance < 10 && emaDistance != 0)
             {
                 digitalWrite(red, LOW);
                 digitalWrite(yellow, HIGH);
             }
 
-            else if (distanceInch != 0)
+            else if (emaDistance != 0)
             {
                 digitalWrite(red, LOW);
                 digitalWrite(yellow, LOW);
             }
-            prevDist = distanceInch;
         }
 
           if (millis() - lastMillis >= 1*60*1000UL) 
